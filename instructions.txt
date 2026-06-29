@@ -1,0 +1,16 @@
+Steps:
+0. Edit the IDAExport.py script and set the path where you want the exported data to go.
+
+1. In IDA open the first binary file you want to diff. This has to be a new IDA database from scratch! No previous info may be in the database. If it's a steam game then it has to be unpacked first.
+2. Let analysis finish. Then run class informer plugin with "Place structures" and "Process static initializers & terminators" checked.
+3. After it's finished run the IDAExport.py script (File->Script file)
+4. Make a new directory and put the idaexport_*.txt files in there
+5. In IDA open the second binary file you want to diff. It has to be new again!
+6. Let analysis finish. Then run class informer with same settings as before.
+7. Run the IDAExport.py script.
+8. Make a second new directory and put the idaexport_*.txt files in there
+9. Run IDADiffCalculator.exe with the parameters like this:
+IDADiffCalculator.exe 64 "path_to_first_dir" "path_to_second_dir"
+10. Wait for the app to finish and the result will be in output.txt, output_unmatched_next.txt, output_unmatched_prev.txt, outputsorted.txt
+
+Warning: The app may use a lot of memory (6+ GB). It may take up to 60 minutes or more to calculate.
