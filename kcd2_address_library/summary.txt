@@ -1,0 +1,46 @@
+KCD2 cross-version address library (Steam <-> GOG)
+===================================================
+canonical key = abstract id (see kcd2_id_registry.csv);
+this CSV is keyed by Steam RVA for bootstrap only
+
+Build: release_1_5-15693 (game 1.5.6), both distributions same assembly.
+
+=== raw differ pass ===
+Steam objects matched in GOG : 1360656
+  perfect (score 1)          : 1342201
+
+By type (all matched):
+  var      484095
+  (blank)  399432
+  func     359633
+  loc      74187
+  vtable   43309
+
+=== after code-anchored correction pass (codeanchor_full.py --apply) ===
+720 corrections (unanimous-vote only): func 212, var 431, loc 71, unknown-type 6
+0 fills, 19 ambiguous-skipped (differ kept)
+
+=== manual overrides (addresslib_overrides.csv) ===
+gEnv (id 1300, steam 492D7F8) -> gog 49177F8
+  VERIFIED via 667/667 unanimous code-ref consensus across every referencer of
+  gEnv+0x58 (pCryPak field); differ could not match gEnv's own base address
+  because no instruction refs the bare struct base, only base+offset fields.
+
+=== final registry: 1,360,659 total ids ===
+  GOG-mapped   : 1,360,657  (99.99985%)
+  GOG-unmapped : 2 -- both wh::guimodule::C_UIFlashProsBanner (VTABLE_C_UIFlashProsBanner[0]
+                 id 1014, RTTI_C_UIFlashProsBanner id 1776). CONFIRMED genuinely absent from
+                 the GOG build, not a differ failure: GOG's name export has only 12 of Steam's
+                 24 C_UIFlashProsBanner symbols, and all 12 are generic RTTR property-wrapper
+                 template instantiations (compiled for any reflected type regardless of use);
+                 none of the class's own vtable/RTTI-COL/ctor symbols exist in GOG. The class
+                 was never instantiated/linked live in that build.
+
+=== independent cross-validation (Class Informer ground truth) ===
+Every RTTI_ (1023) and VTABLE_*[0] (886) entry's predicted GOG address was checked against
+GOG's OWN independently-computed name export (Class Informer's RTTI analysis of the GOG
+binary, run before any diffing) for substring containment of the expected mangled class name.
+  RTTI      : 1022/1023 OK, 0 mismatches, 1 no-mapping (UIFlashProsBanner, expected)
+  VTABLE[0] :  885/886  OK, 0 mismatches, 1 no-mapping (UIFlashProsBanner, expected)
+Zero mismatches across 1907 checks -- strong evidence the pipeline (differ + codeanchor +
+override) produced a correct id->address mapping, not just a plausible-looking one.
