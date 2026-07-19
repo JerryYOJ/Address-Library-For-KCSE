@@ -1,46 +1,49 @@
-KCD2 cross-version address library (Steam <-> GOG)
-===================================================
+KCD2 cross-version address library (Steam <-> GOG <-> Epic)
+=============================================================
 canonical key = abstract id (see kcd2_id_registry.csv);
 this CSV is keyed by Steam RVA for bootstrap only
 
-Build: release_1_5-15693 (game 1.5.6), both distributions same assembly.
-
-=== raw differ pass ===
-Steam objects matched in GOG : 1360656
-  perfect (score 1)          : 1342201
+Steam objects with >=1 cross-version match : 1388085
+  matched in GOG                           : 1360656
+  matched in Epic                          : 1368897
+  present in all three AND perfect both    : 1317793
 
 By type (all matched):
-  var      484095
-  (blank)  399432
-  func     359633
-  loc      74187
-  vtable   43309
+  var      494840
+  (blank)  415924
+  func     359782
+  loc      74220
+  vtable   43319
 
 === after code-anchored correction pass (codeanchor_full.py --apply) ===
-720 corrections (unanimous-vote only): func 212, var 431, loc 71, unknown-type 6
-0 fills, 19 ambiguous-skipped (differ kept)
+gog:  31 corrections + 102 fills (13 func, 3 loc, 15 vtable correct; 29 func, 69 var,
+      3 unknown, 1 vtable fill); 13 ambiguous-skipped
+epic: 965 corrections + 117 fills (first-ever pass for this distro: 206 func, 71 loc,
+      684 var, 4 unknown correct; 2 func, 110 var, 5 unknown fill); 17 ambiguous-skipped
 
 === manual overrides (addresslib_overrides.csv) ===
-gEnv (id 1300, steam 492D7F8) -> gog 49177F8
-  VERIFIED via 667/667 unanimous code-ref consensus across every referencer of
-  gEnv+0x58 (pCryPak field); differ could not match gEnv's own base address
-  because no instruction refs the bare struct base, only base+offset fields.
+gEnv (id 1300, steam 492D7F8) -> gog 49177F8, epic 491D8B8
+  Both VERIFIED via unanimous code-ref consensus (667/667 gog, 667/667 epic) across
+  every referencer of gEnv+0x58 (pCryPak field); differ can't match gEnv's own base
+  since no instruction references the bare struct base, only base+offset fields.
 
-=== final registry: 1,360,659 total ids ===
-  GOG-mapped   : 1,360,657  (99.99985%)
-  GOG-unmapped : 2 -- both wh::guimodule::C_UIFlashProsBanner (VTABLE_C_UIFlashProsBanner[0]
-                 id 1014, RTTI_C_UIFlashProsBanner id 1776). CONFIRMED genuinely absent from
-                 the GOG build, not a differ failure: GOG's name export has only 12 of Steam's
-                 24 C_UIFlashProsBanner symbols, and all 12 are generic RTTR property-wrapper
-                 template instantiations (compiled for any reflected type regardless of use);
-                 none of the class's own vtable/RTTI-COL/ctor symbols exist in GOG. The class
-                 was never instantiated/linked live in that build.
+=== final registry: 1,388,086 total ids ===
+  GOG-mapped   : 1,360,759  (98.0%)
+  Epic-mapped  : 1,369,015  (98.6%)
+  Unmapped counts (27,327 gog / 19,071 epic) are mostly the expected long tail of a
+  3-way union: an object matched to ONE non-Steam distro but not the other isn't a
+  gap, it's outside that distro's own matched set (same pattern as KCD1's residual
+  unmatched tail after code-anchoring).
 
 === independent cross-validation (Class Informer ground truth) ===
-Every RTTI_ (1023) and VTABLE_*[0] (886) entry's predicted GOG address was checked against
-GOG's OWN independently-computed name export (Class Informer's RTTI analysis of the GOG
-binary, run before any diffing) for substring containment of the expected mangled class name.
-  RTTI      : 1022/1023 OK, 0 mismatches, 1 no-mapping (UIFlashProsBanner, expected)
-  VTABLE[0] :  885/886  OK, 0 mismatches, 1 no-mapping (UIFlashProsBanner, expected)
-Zero mismatches across 1907 checks -- strong evidence the pipeline (differ + codeanchor +
-override) produced a correct id->address mapping, not just a plausible-looking one.
+Every RTTI_ (1083) and VTABLE_*[0] (886) entry's predicted address was checked
+against each distro's OWN independently-computed name export (Class Informer's RTTI
+analysis of that binary, run before any diffing) for substring containment of the
+expected mangled class name.
+  GOG  RTTI      : 1082/1083 OK, 0 mismatches, 1 no-mapping (C_UIFlashProsBanner)
+  GOG  VTABLE[0] :  885/886  OK, 0 mismatches, 1 no-mapping (C_UIFlashProsBanner)
+  Epic RTTI      : 1083/1083 OK, 0 mismatches, 0 no-mapping
+  Epic VTABLE[0] :  886/886  OK, 0 mismatches, 0 no-mapping
+C_UIFlashProsBanner is CONFIRMED present and live in Epic (all 24 of Steam's name
+symbols present, incl. its own vtable/TypeDescriptor -- unlike GOG's 12, all generic
+RTTR template-wrapper instantiations). Zero mismatches across 1969 checks total.
